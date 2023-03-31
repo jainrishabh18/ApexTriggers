@@ -13,5 +13,9 @@ public with sharing class CaseService {
         }
         return accounts;
     }
-    
+
+    public static List<Account> getRelatedAccount(Set<Id> accountIds){
+        List<Account> accounts = [SELECT Id, NumberOfEmployees, Left_Employee_Count__c, Total_Customer_Case__c, Total_Partner_Case__c FROM ACCOUNT WHERE Id IN : accountIds];   //NOPMD
+        return !accounts.isEmpty() ? accounts : NULL;
+    }    
 }

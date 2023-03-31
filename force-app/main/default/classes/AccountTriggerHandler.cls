@@ -9,6 +9,7 @@ public with sharing class AccountTriggerHandler { //NOPMD
         createRelatedContact(newList);
         createRelatedOpportunity(newList);
         createRelatedContactOrOpportunity(newList);
+        shareWithStandardUsers(newList);
     }
      
     public static void beforeUpdate(List<Account> newList, Map<Id, Account> oldMap) { //NOPMD
@@ -19,16 +20,21 @@ public with sharing class AccountTriggerHandler { //NOPMD
     public static void afterUpdate(List<Account> newList, Map<Id, Account> oldMap) { //NOPMD
         updateRelatedContactPhone(newList,oldMap);
         updateStageOnAccountActive(newList,oldMap);
+        setBillingToMailingAddress(newList,oldMap);
+        handleAccountOwnerChange(newList, oldMap);
+        getAccountRelatedOpportunity(newList, oldMap);
     }
      
     public static void beforeDelete(List<Account> oldList) { //NOPMD
         stopDeleteOnActiveAccount(oldList);
+        preventDeletionWithOpportunity(oldList);
+        restrictAccountDeleteIfCaseExist(oldList);
     }
      
     public static void afterDelete(List<Account> oldList) { //NOPMD
          
     }
-     
+    //  Scenerio 1
     private static void updateRatingRelatedToIndustry(List<Account> accounts, Map<Id, Account> oldAccountDetailsMap) { 
          //updating rating based on industry type
          for(Account account: accounts ) {
@@ -88,7 +94,7 @@ public with sharing class AccountTriggerHandler { //NOPMD
         }
     }
 
-    // ques 3
+    // Scenerio 3
     private static void updateRelatedContactPhone(List<Account>accounts, Map<Id, Account> accountMap) {
         Map<Id, String> accountIdPhoneUpdate = new Map<Id, String>();
         for(Account account: accounts) {
@@ -148,46 +154,46 @@ public with sharing class AccountTriggerHandler { //NOPMD
     // }
     
     // Ques 6
-    // private static void setBillingToMailingAddress(List<Account> newList, Map<Id, Account> oldMap){ //NOPMD
-    //     List<Contact> newContacts = new List<Contact>();
-    //     Set<Id> accountIds = new Set<Id>();
-    //     for(Account account : newList){
-    //         if(account.BillingCountry != oldMap.get(account.Id).BillingCountry && oldMap!=NULL){
-    //             accountIds.add(account.Id);
-    //         }
-    //         if(account.BillingGeocodeAccuracy != oldMap.get(account.Id).BillingGeocodeAccuracy && oldMap!=NULL){
-    //             accountIds.add(account.Id);
-    //         }
-    //         if(account.BillingLatitude != oldMap.get(account.Id).BillingLatitude && oldMap!=NULL){
-    //             accountIds.add(account.Id);
-    //         }
-    //         if(account.BillingLongitude != oldMap.get(account.Id).BillingLongitude && oldMap!=NULL){
-    //             accountIds.add(account.Id);
-    //         }
-    //         if(account.BillingPostalCode != oldMap.get(account.Id).BillingPostalCode && oldMap!=NULL){
-    //             accountIds.add(account.Id);
-    //         }
-    //         if(account.BillingState != oldMap.get(account.Id).BillingState && oldMap!=NULL){
-    //             accountIds.add(account.Id);
-    //         }
-    //         if(account.BillingStreet != oldMap.get(account.Id).BillingStreet && oldMap!=NULL){
-    //             accountIds.add(account.Id);
-    //         }
-    //     }
-    //     List<Account> oldAccounts = [SELECT Id, BillingCountry, BillingState, BillingStreet, BillingPostalCode,(SELECT Id FROM contacts) FROM Account WHERE Id IN: accountIds]; //NOPMD
-    //     for(Account accountInstance : oldAccounts){
-    //         for(Contact contactInstance : accountInstance.Contacts){
-    //             contactInstance.MailingCountry = accountInstance.BillingCountry;
-    //             contactInstance.MailingState = accountInstance.BillingState;
-    //             contactInstance.MailingStreet = accountInstance.BillingStreet;
-    //             contactInstance.MailingPostalCode = accountInstance.BillingPostalCode;
-    //             newContacts.add(contactInstance);
-    //         }
-    //     }
-    //     if(!newContacts.isEmpty()){
-    //         update newContacts; //NOPMD
-    //     }
-    // }
+    private static void setBillingToMailingAddress(List<Account> newList, Map<Id, Account> oldMap){ //NOPMD
+        List<Contact> newContacts = new List<Contact>();
+        Set<Id> accountIds = new Set<Id>();
+        for(Account account : newList){
+            if(account.BillingCountry != oldMap.get(account.Id).BillingCountry && oldMap!=NULL){
+                accountIds.add(account.Id);
+            }
+            if(account.BillingGeocodeAccuracy != oldMap.get(account.Id).BillingGeocodeAccuracy && oldMap!=NULL){
+                accountIds.add(account.Id);
+            }
+            if(account.BillingLatitude != oldMap.get(account.Id).BillingLatitude && oldMap!=NULL){
+                accountIds.add(account.Id);
+            }
+            if(account.BillingLongitude != oldMap.get(account.Id).BillingLongitude && oldMap!=NULL){
+                accountIds.add(account.Id);
+            }
+            if(account.BillingPostalCode != oldMap.get(account.Id).BillingPostalCode && oldMap!=NULL){
+                accountIds.add(account.Id);
+            }
+            if(account.BillingState != oldMap.get(account.Id).BillingState && oldMap!=NULL){
+                accountIds.add(account.Id);
+            }
+            if(account.BillingStreet != oldMap.get(account.Id).BillingStreet && oldMap!=NULL){
+                accountIds.add(account.Id);
+            }
+        }
+        List<Account> oldAccounts = [SELECT Id, BillingCountry, BillingState, BillingStreet, BillingPostalCode,(SELECT Id FROM contacts) FROM Account WHERE Id IN: accountIds]; //NOPMD
+        for(Account accountInstance : oldAccounts){
+            for(Contact contactInstance : accountInstance.Contacts){
+                contactInstance.MailingCountry = accountInstance.BillingCountry;
+                contactInstance.MailingState = accountInstance.BillingState;
+                contactInstance.MailingStreet = accountInstance.BillingStreet;
+                contactInstance.MailingPostalCode = accountInstance.BillingPostalCode;
+                newContacts.add(contactInstance);
+            }
+        }
+        if(!newContacts.isEmpty()){
+            update newContacts; //NOPMD
+        }
+    }
 
     //Ques 8
     private static void updateStageOnAccountActive(List<Account> accounts, Map<Id, Account> accountMap) {
@@ -215,17 +221,17 @@ public with sharing class AccountTriggerHandler { //NOPMD
         }
     }
 
-    //Ques 10
+    //Ques 10 and 11
     private static void preventEditAccount(List<Account> accounts, Map<Id, Account> accountMap) {
         for(Account account: accounts) { 
-            if(account.createdDate < System.Today().addDays(-7)) {
-                account.addError('Cannot Edit as Account created 7 days before');
+            if(account.createdDate < System.Today().adddays(-4)) {
+                account.adderror('Cannot Edit as Account created 7 days before');
             }
-        }   
+        }
     }
-    
-    // ques 13
-    private static void deleteAccessOnlyToSystemAdmin(List<Account> accounts){
+
+    // scenerio 13
+    private static void handleRecordDeletion(List<Account> accounts){
         String currentUserId = UserInfo.getProfileId();
         String systemAdministratorId = [Select Id, Name from Profile where Name = 'System Administrator' Limit 1].Id;
         
@@ -235,8 +241,81 @@ public with sharing class AccountTriggerHandler { //NOPMD
             }
         }
     }
+    
+//  Scenerio - 15 
+    private static void preventDeletionWithOpportunity(List<Account> accounts){
+        List<Account> fetchedAccounts = AccountService.getRelatedOpportunities(accounts);
+        System.debug(fetchedAccounts);
+        for(Account account : fetchedAccounts){
+            if(account.Opportunities.size() != 0){
+                account.addError('You cannot Delete because of Related Opportunities');
+            }
+        }
+    }
+//  Scenerio 16
+    private static void restrictAccountDeleteIfCaseExist(List<Account> accounts) { 
+        List<Case> cases = [SELECT AccountId FROM Case ];   //NOPMD
+        Set<Id> accountIds = new Set<Id>();
+        for(Case caseRecord : cases) {
+            accountIds.add(caseRecord.AccountId);
+        }
+        for(Account account : accounts) {
+            if(accountIds.contains(account.Id)) {
+                account.addError('Case Exists');
+            }
+        }
+    }
+// Scenerio 23
+    private static void getAccountRelatedOpportunity(List<Account> accounts, Map<Id,Account> accountMap) { 
+        List<Opportunity> opportunities = [SELECT Id, StageName, Annual_Revenue__c, Account.AnnualRevenue, AccountId, Account.Active__c FROM Opportunity WHERE AccountId IN: accountMap.keySet()];  //NOPMD
+        
+        for (Opportunity opportunity : opportunities) {
+            if (opportunity.Account.Active__c != accountMap.get(opportunity.AccountId).Active__c 
+                && opportunity.Account.Active__c == 'no' 
+                && accountMap.get(opportunity.AccountId).Active__c == 'yes' 
+                && opportunity.StageName != 'Closed Won') {
+                opportunity.StageName = 'Close Lost';
+            }
+            if (opportunity.Account.AnnualRevenue != NULL && opportunity.Account.AnnualRevenue !=  accountMap.get(opportunity.AccountId).AnnualRevenue) {
+                opportunity.Annual_Revenue__c = opportunity.Account.AnnualRevenue;
+            }
+        }
+        
+        update opportunities;   //NOPMD
+    }
 
-
-
+// Scenerio 27 and 28
+    private static void handleAccountOwnerChange(List<Account> updatedAccounts, Map<Id, Account> oldAccountMap) { 
+        List<Contact> contactsToUpdate = new List<Contact>();
+        for (Account updatedAccount : updatedAccounts) {
+            Account oldAccount = oldAccountMap.get(updatedAccount.Id);  
+            if (updatedAccount.OwnerId != oldAccount.OwnerId) {
+                contactsToUpdate.addAll([SELECT Id, OwnerId FROM Contact WHERE AccountId = :updatedAccount.Id]);    //NOPMD
+            }
+        }
+        if (!contactsToUpdate.isEmpty()) {
+            for (Contact contactToUpdate : contactsToUpdate) {
+                contactToUpdate.OwnerId = updatedAccounts[0].OwnerId;
+            }   
+            update contactsToUpdate;    //NOPMD
+        }
+    }
+// Scenerio 31
+    private static void shareWithStandardUsers(List<Account> newAccounts) { 
+        List<AccountShare> accountSharesToInsert = new List<AccountShare>();
+        List<User> standardUsers = [SELECT Id FROM User WHERE Profile.Name = 'Standard User'];  //NOPMD
+        
+        for (Account newAccount : newAccounts) {
+            for (User standardUser : standardUsers) {
+                AccountShare accountShare = new AccountShare();
+                accountShare.AccountId = newAccount.Id;
+                accountShare.UserOrGroupId = standardUser.Id;
+                accountShare.AccountAccessLevel = 'Read';
+                accountShare.RowCause = Schema.AccountShare.RowCause.Manual;
+                accountSharesToInsert.add(accountShare);
+            }
+        }
+        insert accountSharesToInsert; //NOPMD
+    }
 
 }

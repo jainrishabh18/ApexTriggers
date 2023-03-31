@@ -3,11 +3,11 @@ public with sharing class EmployeeTriggerHandler {
         updateActive(newList);
         getEmployeeCount(newList);
     }
-    public static void afterDelete(List<Employee__c> oldList, Map<Id, Employee__c> oldMap){
-        getRemainingEmployee(oldList);
-    }
     public static void afterInsert(List<Employee__c> newList){
         getEmployeeCount(newList);
+    }
+    public static void afterDelete(List<Employee__c> oldList, Map<Id, Employee__c> oldMap){
+        getRemainingEmployee(oldList);
     }
 // ques 18
     private static void updateActive(List<Employee__c> employeeList) {
@@ -46,12 +46,14 @@ public with sharing class EmployeeTriggerHandler {
         }
         List<Account> accounts = EmployeeService.getEmployeeRelatedAccount(accountIds);
         for(Account account : accounts){
-            System.debug(account.Id);
+            // System.debug(account.Id);
             account.NumberOfEmployees = account.Employees__r.size();
         }
         if(!accounts.isEmpty()){
             update accounts;    //NOPMD
         }
     }
+
+
 
 }

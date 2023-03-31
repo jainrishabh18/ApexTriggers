@@ -36,6 +36,7 @@ public with sharing class AccountService {
 
     public static List<Opportunity> updateStageToCloseLost(Set<Id> accountsToUpdate) {
         List<Opportunity> allOpportunityToUpdate = [SELECT StageName FROM Opportunity WHERE AccountId IN: accountsToUpdate]; //NOPMD
+         
         for(Opportunity OpportunityInstance: allOpportunityToUpdate) { //NOPMD
             if(OpportunityInstance.StageName != 'Close Won') {
                 OpportunityInstance.StageName = 'Close Lost';
@@ -46,7 +47,7 @@ public with sharing class AccountService {
 
     public static List<Account> getRelatedOpportunities(List<Account> accounts){
         Set<Id> accountIds = new Set<Id>();
-        for(Account account : accounts) {
+        for(Account account : accounts){
             accountIds.add(account.Id);
         }
         List<Account> accountWithRelatedOpp = [SELECT Id,Name, (SELECT Id, AccountId FROM Opportunities) FROM ACCOUNT WHERE Id IN: accountIds]; //NOPMD

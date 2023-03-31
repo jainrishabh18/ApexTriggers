@@ -18,7 +18,7 @@ public with sharing class OpportunityTriggerHandler {
     }
     
     public static void beforeDelete(List<Opportunity> oldList) { //NOPMD
-        
+        removeOpportunityIfSystemAdministrator(oldList);
     }
     
     public static void afterDelete(List<Opportunity> oldList) { //NOPMD
@@ -50,7 +50,7 @@ public with sharing class OpportunityTriggerHandler {
             update accounts;            //NOPMD
         }
     }
-
+// Scenerio 2 and Scenerio 26
     private static void updateDescriptionOnStage(List<Opportunity> opportunities, Map<Id, Opportunity> oldOppportunitiesMap) { //NOPMD
         for(Opportunity opportunitie: opportunities) { 
             //update case
@@ -73,7 +73,7 @@ public with sharing class OpportunityTriggerHandler {
             }
         }
     }
-// ques 7
+// Scenerio 7
     private static void createTaskOnStageUpdate(List<Opportunity> opportunities, Map<Id, Opportunity> oldOppportunitiesMap) {
         
         List<Task> insertTaskList = new List<Task>();
@@ -92,7 +92,7 @@ public with sharing class OpportunityTriggerHandler {
             insert insertTaskList; //NOPMD
         }
     }
-// ques 12
+// Scenerio 12
     private static void errorOnReasonFieldNotPopulated(List<Opportunity> opportunities, Map<Id, Opportunity> oldOppportunitiesMap) {
         for(Opportunity opportunitieInstance: opportunities) {
             if(opportunitieInstance.StageName != oldOppportunitiesMap.get(opportunitieInstance.Id).StageName) {
@@ -103,8 +103,8 @@ public with sharing class OpportunityTriggerHandler {
         }
     }
 
-// ques 14
-    private static void removeOpportunityIfSystemAdministrator(List<Opportunity> opportunities, Map<Id, Opportunity> oldOppportunitiesMap) {
+// Scenerio 14
+    private static void removeOpportunityIfSystemAdministrator(List<Opportunity> opportunities) {
         Id systemAdministratorId = UserInfo.getProfileId();
         Profile profileName = [SELECT Name,Id FROM Profile WHERE Id =: systemAdministratorId LIMIT 1]; //NOPMD
         for(Opportunity opportunity : opportunities) {
@@ -113,17 +113,16 @@ public with sharing class OpportunityTriggerHandler {
             }
         }
     }
-
-// ques 15
-    private static void preventDeleteRelatedToOpportunity(List<Account> accounts) {
-        List<Account> fetchedAccounts = AccountService.getRelatedOpportunities(accounts);
-        for(Account account : fetchedAccounts){
-            if(account.Opportunities.size() != 0) {
-                account.addError('You cannot Delete because of Related Opportunities');
-            }
+// Scenerio 23
+    public static List<Account> updateOpportunityRelatedAccounts(Set<Id> AccountIds) { //NOPMD
+        List<Account> accounts = new List<Account>();
+        AggregateResult[] groupedResults = [SELECT AccountId, Sum(Amount)annulRevenue FROM Opportunity  WHERE AccountId IN: AccountIds GROUP BY AccountId]; //NOPMD
+        for (AggregateResult variable : groupedResults) {
+            String accountId = String.valueOf(variable.get('AccountId'));
+            Integer annualRevenue = Integer.valueOf(variable.get('annulRevenue'));
+            accounts.add(new Account(Id = accountId, AnnualRevenue = annualRevenue));
         }
+        return accounts;
     }
-
-
+// 
 }
- 
