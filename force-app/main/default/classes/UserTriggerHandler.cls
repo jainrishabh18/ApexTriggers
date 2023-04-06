@@ -34,7 +34,7 @@ public with sharing class UserTriggerHandler {
         }
         if (!groupMembers.isEmpty()) {
             insert groupMembers;       // NOPMD
-        }
+        } 
     }
 
     private static void updateAdminToPublicGroup(List<User> users, Map<Id, User> userMap) {
